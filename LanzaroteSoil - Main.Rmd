@@ -1,0 +1,72 @@
+---
+title: "Lanzarote Soil"
+author: "Yago Sánchez Gancedo"
+date:
+output: html_document
+---
+
+
+## 1. Introduction of the data
+
+The first task is to read the data in R
+
+```{r}
+install.packages("openxlsx", repos = "http://cran.us.r-project.org")
+library(openxlsx)
+
+#Creating the local path to the data, and using that path to generate an object containing such data
+
+DataPath <- "/Users/cacharra2.0/Desktop/TFM/Lanzarotesoil.xlsx"
+SoilData <- read.xlsx(DataPath, colNames = TRUE)
+```
+
+## 2. Superficial exploration of the data
+
+Once the data is stored in the variable "SoilData", a brief superficial exploration can be performed to ensure that everything is correct and that the data is treated accordingly:
+
+Visualization of the first and last subset of data, to check if it matches with the original data table.
+```{r}
+head(SoilData)
+tail(SoilData)
+```
+
+Structure of the data.
+
+```{r}
+dim(SoilData)
+ncol(SoilData)
+nrow(SoilData)
+str(SoilData)
+```
+
+A summary to see if the variables are treated with the correct format
+
+```{r}
+summary(SoilData)
+```
+
+As it can be seen with the two previous commands, some variables are not treated as desired. A correction is needed:
+
+```{r}
+SoilData$SAMPLE.NUMBER <- as.character(SoilData$SAMPLE.NUMBER)
+SoilData$CLASS <- factor(SoilData$CLASS)
+SoilData$SUBCLASS1_FARMED <- factor(SoilData$SUBCLASS1_FARMED)
+SoilData$SUBCLASS2_MULCHING <- factor(SoilData$SUBCLASS2_MULCHING)
+SoilData$SUBCLASS3_IRRIGATION <- factor(SoilData$SUBCLASS3_IRRIGATION)
+SoilData$CLASS.REFERENCE <- factor(SoilData$CLASS.REFERENCE)
+SoilData$DEPTH <- factor(SoilData$DEPTH) #LABELS!
+SoilData$TEXTURE <- factor(SoilData$TEXTURE) #LABELS!
+```
+
+## 3. Wrangling of the data
+
+Creating a new factor with the different pH types
+
+```{r}
+SoilData$PHtype <- cut(SoilData$PH, breaks=c(-Inf, 6, 8, Inf), labels=c("Acid", "Neutral", "Basic"))
+
+#More Wrangling?
+
+```
+
+## 4. Variable exploration

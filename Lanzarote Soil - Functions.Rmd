@@ -1,0 +1,110 @@
+---
+title: "Lanzarote Soil - Functions"
+author: "Yago Sánchez Gancedo"
+date:
+output: html_document
+---
+
+
+## map_plot
+
+Generates a plot considering the geographic distribution of a variable and a subclass clasification. The format of the data points is different deppending on the nature of the variable.
+
+```{r}
+map_plot <- function(subclass_chr, subclass_label, dataframe, variable_chr){
+                 
+                filtered_data <- dplyr::filter(dataframe, !is.na(dataframe[,variable_chr]))
+                
+                if (is.numeric(dataframe[,variable_chr])){
+                        
+                    print(ggplot(filtered_data, aes(x=XUTM, y=YUTM, size=filtered_data[,variable_chr], col = filtered_data[,subclass_chr])) 
+                       + geom_point() 
+                       + ggtitle(paste(variable_chr, "according to location and", subclass_label)) 
+                       + labs(size=variable_chr, col=subclass_label)
+                       + theme(legend.title=element_text(size=9),
+                               legend.text=element_text(size=7),
+                               legend.position = c(0.85,0.2),
+                               legend.box="horizontal",
+                               legend.key.size=unit(0.05, "cm")))  
+                        
+                }else if(is.factor(dataframe[,variable_chr])) {
+                 
+                print(ggplot(filtered_data, aes(x=XUTM, y=YUTM, shape=filtered_data[,variable_chr], col = filtered_data[,subclass_chr])) 
+                       + geom_point() 
+                       + ggtitle(paste(variable_chr, "according to location and", subclass_label)) 
+                       + labs(shape=variable_chr, col=subclass_label)
+                       + theme(legend.title=element_text(size=9),
+                               legend.text=element_text(size=7),
+                               legend.position = c(0.85,0.2),
+                               legend.box="horizontal",
+                               legend.key.size=unit(0.05, "cm")))
+                }
+                 
+}
+```
+
+
+## variable_exploration
+
+Given a variable, the function will generate a pdf with several outputs including statistics, plots, etc. with the aim of making a general exploration of the variable. It also takes into account the nature of the variable.
+
+
+```{r}
+variable_exploration <- function (dataframe, variable_chr) {
+        
+        require(ggplot2)
+        require(dplyr)
+        require(gridExtra)
+        
+        # the name of the resulting pdf file.
+         filename <- paste("Exploration of ", variable_chr,".pdf", sep="") 
+        
+        # if the variable is numeric, a summary, histogram, test for normality and several "map plots" will be obtained.
+     if(is.numeric(dataframe[,variable_chr])){
+             
+         pdf(filename)
+         
+         grid.table(capture.output(summary(dataframe[,variable_chr])))
+         
+         print(ggplot(dataframe, aes(dataframe[,variable_chr])) + geom_histogram() + ggtitle(paste("Histogram of", variable_chr)) + labs(x=(variable_chr)))
+         
+         plot.new()
+         
+         grid.table(capture.output(shapiro.test(dataframe[,variable_chr])))
+         
+         #map_plot("CLASS", "Soil Class", dataframe, variable_chr)??
+         
+         map_plot("SUBCLASS1_FARMED", "Soil Farming", dataframe, variable_chr)
+         
+         map_plot("SUBCLASS2_MULCHING", "Soil mulching",dataframe, variable_chr)
+         
+         map_plot("SUBCLASS3_IRRIGATION", "Soil Irrigation",dataframe, variable_chr)
+         
+         dev.off()
+         return()
+     }
+        
+         #On the other hand, if the variable is a factor, a summary, bar plot and several "map plots" will be obtained.
+         
+     else if(is.factor(dataframe[,variable_chr])){
+             
+        pdf(filename)
+             
+        grid.table(capture.output(summary(dataframe[,variable_chr])))
+             
+        print(ggplot(dataframe, aes(dataframe[,variable_chr])) + geom_bar() + ggtitle(paste("Barplot of", variable_chr)) + labs(x=(variable_chr)))
+        
+        map_plot("SUBCLASS1_FARMED", "Soil Farming",dataframe, variable_chr)
+         
+        map_plot("SUBCLASS2_MULCHING", "Soil mulching",dataframe, variable_chr)
+         
+        map_plot("SUBCLASS3_IRRIGATION", "Soil Irrigation",dataframe, variable_chr)
+        
+        dev.off()
+        return()
+     }
+     return()
+}
+```
+
+ 
