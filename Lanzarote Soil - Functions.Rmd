@@ -12,7 +12,10 @@ Generates a plot considering the geographic distribution of a variable and a sub
 
 ```{r}
 map_plot <- function(subclass_chr, subclass_label, dataframe, variable_chr){
-                 
+                
+                require(ggplot2)
+                require(dplyr)
+   
                 filtered_data <- dplyr::filter(dataframe, !is.na(dataframe[,variable_chr]))
                 
                 if (is.numeric(dataframe[,variable_chr])){
