@@ -20,32 +20,53 @@ map_plot <- function(subclass_chr, subclass_label, dataframe, variable_chr){
                 
                 if (is.numeric(dataframe[,variable_chr])){
                         
-                    print(ggplot(filtered_data, aes(x=XUTM, y=YUTM, size=filtered_data[,variable_chr], col = filtered_data[,subclass_chr])) 
-                       + geom_point() 
-                       + ggtitle(paste(variable_chr, "according to location and", subclass_label)) 
-                       + labs(size=variable_chr, col=subclass_label)
-                       + theme(legend.title=element_text(size=9),
-                               legend.text=element_text(size=7),
-                               legend.position = c(0.85,0.2),
-                               legend.box="horizontal",
-                               legend.key.size=unit(0.05, "cm")))  
+                    ggplot(filtered_data, aes(x=XUTM, y=YUTM, size=filtered_data[,variable_chr], col = filtered_data[,subclass_chr]))+
+                  geom_point()+
+                  ggtitle(paste(variable_chr, "according to location and", subclass_label))+
+                  labs(size=variable_chr, col=subclass_label)+
+                  theme(legend.title=element_text(size=9),
+                        legend.text=element_text(size=7),
+                        legend.position = c(0.85,0.2),
+                        legend.box="horizontal",
+                        legend.key.size=unit(0.05, "cm"))  
                         
                 }else if(is.factor(dataframe[,variable_chr])) {
-                 
-                print(ggplot(filtered_data, aes(x=XUTM, y=YUTM, shape=filtered_data[,variable_chr], col = filtered_data[,subclass_chr])) 
-                       + geom_point() 
-                       + ggtitle(paste(variable_chr, "according to location and", subclass_label)) 
-                       + labs(shape=variable_chr, col=subclass_label)
-                       + theme(legend.title=element_text(size=9),
-                               legend.text=element_text(size=7),
-                               legend.position = c(0.85,0.2),
-                               legend.box="horizontal",
-                               legend.key.size=unit(0.05, "cm")))
+                  ggplot(filtered_data, aes(x=XUTM, y=YUTM, shape=filtered_data[,variable_chr], col = filtered_data[,subclass_chr]))+
+                    geom_point()+
+                    ggtitle(paste(variable_chr, "according to location and", subclass_label))+
+                    labs(shape=variable_chr, col=subclass_label)+
+                    theme(legend.title=element_text(size=9),
+                          legend.text=element_text(size=7),
+                          legend.position = c(0.85,0.2),
+                          legend.box="horizontal",
+                          legend.key.size=unit(0.05, "cm"))
                 }
                  
 }
 ```
 
+## soil_boxplot
+
+```{r}
+
+soil_boxplot <- function(subclass_chr, subclass_label, dataframe, variable_chr){
+  
+  require(ggplot2)
+  require(dplyr)
+  
+  filtered_data <- dplyr::filter(dataframe, !is.na(dataframe[,variable_chr]))
+  
+  ggplot(filtered_data, aes(x=filtered_data[,subclass_chr], y=filtered_data[,variable_chr]))+
+    geom_boxplot()+
+    ggtitle(paste("Boxplot of", variable_chr, "related to", subclass_label))+
+    labs(x=subclass_label, y=variable_chr)
+        
+  
+}
+
+
+
+```
 
 ## variable_exploration
 
@@ -77,11 +98,17 @@ variable_exploration <- function (dataframe, variable_chr) {
          
          #map_plot("CLASS", "Soil Class", dataframe, variable_chr)??
          
-         map_plot("SUBCLASS1_FARMED", "Soil Farming", dataframe, variable_chr)
+         print(map_plot("SUBCLASS1_FARMED", "Soil Farming", dataframe, variable_chr))
          
-         map_plot("SUBCLASS2_MULCHING", "Soil mulching",dataframe, variable_chr)
+         print(map_plot("SUBCLASS2_MULCHING", "Soil mulching",dataframe, variable_chr))
          
-         map_plot("SUBCLASS3_IRRIGATION", "Soil Irrigation",dataframe, variable_chr)
+         print(map_plot("SUBCLASS3_IRRIGATION", "Soil Irrigation",dataframe, variable_chr))
+         
+         print(soil_boxplot("SUBCLASS1_FARMED", "Soil Farming", dataframe, variable_chr))
+         
+         print(soil_boxplot("SUBCLASS2_MULCHING", "Soil mulching",dataframe, variable_chr))
+         
+         print(soil_boxplot("SUBCLASS3_IRRIGATION", "Soil Irrigation",dataframe, variable_chr))
          
          dev.off()
          return()
@@ -97,11 +124,11 @@ variable_exploration <- function (dataframe, variable_chr) {
              
         print(ggplot(dataframe, aes(dataframe[,variable_chr])) + geom_bar() + ggtitle(paste("Barplot of", variable_chr)) + labs(x=(variable_chr)))
         
-        map_plot("SUBCLASS1_FARMED", "Soil Farming",dataframe, variable_chr)
+        print(map_plot("SUBCLASS1_FARMED", "Soil Farming",dataframe, variable_chr))
          
-        map_plot("SUBCLASS2_MULCHING", "Soil mulching",dataframe, variable_chr)
+        print(map_plot("SUBCLASS2_MULCHING", "Soil mulching",dataframe, variable_chr))
          
-        map_plot("SUBCLASS3_IRRIGATION", "Soil Irrigation",dataframe, variable_chr)
+        print(map_plot("SUBCLASS3_IRRIGATION", "Soil Irrigation",dataframe, variable_chr))
         
         dev.off()
         return()
@@ -110,4 +137,38 @@ variable_exploration <- function (dataframe, variable_chr) {
 }
 ```
 
- 
+```{r}
+#make_subclass_coastal will include a new variable in the SoilData dataframe related to the coordinates of each observation. The variable is a factor which approximately classifies each observation into one of two categories: "coastal" and "interior" deppending on where the sample was extracted in relation to its proximity to the coast. For that, the first and last quartiles of the variables XUTM and YUTM were extracted and combined to generate the category "coastal", and all the leftover observations were included in "interior".  
+
+make_subclass_coastal <- function(){
+
+  class <- as.vector(SoilData$CLASS)
+  
+  coastalX <- as.vector(cut(SoilData$XUTM, breaks=c(-Inf,630679,646304,Inf), labels=c("coastal","interior","coastal")))
+  
+  coastalY <- as.vector(cut(SoilData$YUTM, breaks=c(-Inf,3207726,3221146,Inf), labels=c("coastal","interior","coastal")))
+  
+  a <- c()
+  
+  for (i in seq_along(coastalX)){
+    
+        if(class[i]=="coastal soil nonfarmed"){
+          a[i] <- "coastal"
+          }else if(coastalX[i]=="coastal"){
+            a[i] <- "coastal"
+            }else if(coastalY[i]=="coastal"){
+              a[i] <- "coastal"
+              }else{
+                a[i] <- "interior"
+              }
+  }
+  
+  SoilData$subclass_coastal <<- as.factor(a)
+  return()
+  }
+
+
+  
+```
+
+
