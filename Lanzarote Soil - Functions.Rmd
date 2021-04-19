@@ -5,6 +5,26 @@ date:
 output: html_document
 ---
 
+## low_cut_break and high_cut_break
+
+A function that gives the cut points to separate data in parts of the same size. It's intended to be used along with the "cut" function.
+
+```{r}
+low_cut_break <- function(dataframe, variable_chr, cut){
+  
+  low_cut <- min(dataframe[,variable_chr], na.rm=TRUE) + ((max(dataframe[,variable_chr], na.rm=TRUE)-min(dataframe[,variable_chr], na.rm=TRUE))/cut)
+  
+  return(low_cut)
+}
+
+high_cut_break <- function(dataframe, variable_chr, cut){
+  
+  high_cut <- max(dataframe[,variable_chr], na.rm=TRUE) - ((max(dataframe[,variable_chr], na.rm=TRUE)-min(dataframe[,variable_chr], na.rm=TRUE))/cut)
+  
+  return(high_cut)
+}
+```
+
 
 ## map_plot
 
@@ -74,6 +94,8 @@ Given a variable, the function will generate a pdf with several outputs includin
 
 
 ```{r}
+# This function has still to be improved. The output is not optimal with some variables, and more exploration commands can be implemented in it.
+
 variable_exploration <- function (dataframe, variable_chr) {
         
         require(ggplot2)
@@ -98,17 +120,21 @@ variable_exploration <- function (dataframe, variable_chr) {
          
          #map_plot("CLASS", "Soil Class", dataframe, variable_chr)??
          
-         print(map_plot("SUBCLASS1_FARMED", "Soil Farming", dataframe, variable_chr))
+         print(map_plot("SUBCLASS1_AGRICULTURALSYSTEM", "Agricultural System", dataframe, variable_chr))
          
-         print(map_plot("SUBCLASS2_MULCHING", "Soil mulching",dataframe, variable_chr))
+         print(map_plot("SUBCLASS2_FARMED", "Soil Farming", dataframe, variable_chr))
          
-         print(map_plot("SUBCLASS3_IRRIGATION", "Soil Irrigation",dataframe, variable_chr))
+         print(map_plot("SUBCLASS3_MULCHING", "Soil Mulching",dataframe, variable_chr))
          
-         print(soil_boxplot("SUBCLASS1_FARMED", "Soil Farming", dataframe, variable_chr))
+         print(map_plot("SUBCLASS4_IRRIGATION", "Soil Irrigation",dataframe, variable_chr))
          
-         print(soil_boxplot("SUBCLASS2_MULCHING", "Soil mulching",dataframe, variable_chr))
+         print(soil_boxplot("SUBCLASS1_AGRICULTURALSYSTEM", "Agricultural System", dataframe, variable_chr))
          
-         print(soil_boxplot("SUBCLASS3_IRRIGATION", "Soil Irrigation",dataframe, variable_chr))
+         print(soil_boxplot("SUBCLASS2_FARMED", "Soil Farming", dataframe, variable_chr))
+         
+         print(soil_boxplot("SUBCLASS3_MULCHING", "Soil Mulching",dataframe, variable_chr))
+         
+         print(soil_boxplot("SUBCLASS4_IRRIGATION", "Soil Irrigation",dataframe, variable_chr))
          
          dev.off()
          return()
@@ -124,11 +150,13 @@ variable_exploration <- function (dataframe, variable_chr) {
              
         print(ggplot(dataframe, aes(dataframe[,variable_chr])) + geom_bar() + ggtitle(paste("Barplot of", variable_chr)) + labs(x=(variable_chr)))
         
-        print(map_plot("SUBCLASS1_FARMED", "Soil Farming",dataframe, variable_chr))
+        print(map_plot("SUBCLASS1_AGRICULTURALSYSTEM", "Agricultural System",dataframe, variable_chr))
+        
+        print(map_plot("SUBCLASS2_FARMED", "Soil Farming",dataframe, variable_chr))
          
-        print(map_plot("SUBCLASS2_MULCHING", "Soil mulching",dataframe, variable_chr))
+        print(map_plot("SUBCLASS3_MULCHING", "Soil mulching",dataframe, variable_chr))
          
-        print(map_plot("SUBCLASS3_IRRIGATION", "Soil Irrigation",dataframe, variable_chr))
+        print(map_plot("SUBCLASS4_IRRIGATION", "Soil Irrigation",dataframe, variable_chr))
         
         dev.off()
         return()
@@ -138,10 +166,10 @@ variable_exploration <- function (dataframe, variable_chr) {
 ```
 
 ```{r}
-#make_subclass_coastal will include a new variable in the SoilData dataframe related to the coordinates of each observation. The variable is a factor which approximately classifies each observation into one of two categories: "coastal" and "interior" deppending on where the sample was extracted in relation to its proximity to the coast. For that, the first and last quartiles of the variables XUTM and YUTM were extracted and combined to generate the category "coastal", and all the leftover observations were included in "interior".  
+#make_subclass_coastal will include a new variable in the SoilData dataframe related to the coordinates of each observation. The variable is a factor which approximately classifies each observation into one of two categories: "coastal" and "interior" deppending on where the sample was extracted in relation to its proximity to the coast. For that, the first and last quartiles of the variables XUTM and YUTM were extracted and combined to generate the category "coastal", and all the leftover observations were included in "interior". This is just an approximation an it is subject to improving.
 
 make_subclass_coastal <- function(){
-
+  
   class <- as.vector(SoilData$CLASS)
   
   coastalX <- as.vector(cut(SoilData$XUTM, breaks=c(-Inf,630679,646304,Inf), labels=c("coastal","interior","coastal")))

@@ -5,6 +5,14 @@ date:
 output: html_document
 ---
 
+```{r}
+#Path to access the local folder where the script with the functions associated with this work is
+
+folderScripts <- "/Users/cacharra2.0/Desktop/TFM/R/LanzaroteSoil/"
+source(file=file.path(folderScripts, "Lanzarote Soil - Functions.Rmd"))
+
+```
+
 
 ## 1. Introduction of the data
 
@@ -50,9 +58,10 @@ As it can be seen with the two previous commands, some variables are not treated
 ```{r}
 SoilData$SAMPLE.NUMBER <- as.character(SoilData$SAMPLE.NUMBER)
 SoilData$CLASS <- factor(SoilData$CLASS)
-SoilData$SUBCLASS1_FARMED <- factor(SoilData$SUBCLASS1_FARMED)
-SoilData$SUBCLASS2_MULCHING <- factor(SoilData$SUBCLASS2_MULCHING)
-SoilData$SUBCLASS3_IRRIGATION <- factor(SoilData$SUBCLASS3_IRRIGATION)
+SoilData$SUBCLASS1_AGRICULTURALSYSTEM <- factor(SoilData$SUBCLASS1_AGRICULTURALSYSTEM )
+SoilData$SUBCLASS2_FARMED <- factor(SoilData$SUBCLASS2_FARMED)
+SoilData$SUBCLASS3_MULCHING <- factor(SoilData$SUBCLASS3_MULCHING)
+SoilData$SUBCLASS4_IRRIGATION <- factor(SoilData$SUBCLASS4_IRRIGATION)
 SoilData$CLASS.REFERENCE <- factor(SoilData$CLASS.REFERENCE)
 SoilData$DEPTH <- factor(SoilData$DEPTH) #LABELS!
 SoilData$TEXTURE <- factor(SoilData$TEXTURE) #LABELS!
@@ -60,13 +69,27 @@ SoilData$TEXTURE <- factor(SoilData$TEXTURE) #LABELS!
 
 ## 3. Wrangling of the data
 
-Creating a new factor with the different pH types
+Creating a new factor with the different pH types, and categories for rainfall, slope and elevation.
 
 ```{r}
-SoilData$PHtype <- cut(SoilData$PH, breaks=c(-Inf, 6, 8, Inf), labels=c("Acid", "Neutral", "Basic"))
+SoilData$PHgrouped <- cut(SoilData$PH, breaks=c(-Inf, 6, 8, Inf), labels=c("Acid", "Neutral", "Basic"))
 
-#More Wrangling?
+SoilData$rainfallgrouped <- factor(cut(SoilData$RAINFALL_A, breaks=c(-Inf,low_cut_break(SoilData,"RAINFALL_A",3), high_cut_break(SoilData,"RAINFALL_A",3), Inf), labels=c("local low rainfall", "local medium rainfall", "local high rainfall")))
 
+SoilData$slopegrouped <- factor(cut(SoilData$SLOPE, breaks=c(-Inf,5,15, Inf), labels=c("low slope", "medium slope", "high slope")))
+
+SoilData$elevatgrouped <- factor(cut(SoilData$ELEVAT, breaks=c(-Inf,low_cut_break(SoilData,"ELEVAT",3), high_cut_break(SoilData,"ELEVAT",3), Inf), labels=c("low elevation", "normal elevation", "high elevation")))
 ```
 
+
+
 ## 4. Variable exploration
+
+The function "variable_exploration" is applied to all variables, which generated a pdf file with all the information required.
+
+```{r}
+variable_names <- colnames(SoilData)
+for (i in seq_along(variable_names)){
+  variable_exploration(SoilData, variable_names[i])
+}
+```
