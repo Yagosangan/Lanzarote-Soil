@@ -2,8 +2,8 @@
 
 ## Statistical analysis of soil data from the arid island of Lanzarote
 
-This project is an exploratory statistical analysis of more than 600 soil samples extracted from the island of Lanzarote, in the Canarian archipelago, throughout multiple
-field campaigns between September 2010 and September 2016.
+This work is part of the final project for the Master's Degree in Bioinformatics and Biostatistics (UOC/UB). It includes an exploratory statistical analysis of more than 600 soil samples extracted from the island of Lanzarote, in the Canarian archipelago, throughout multiple
+field campaigns between September 2010 and September 2016. 
 
 The exploration is developed in the R language, saving the whole process in R markdown documents. The document "Lanzarote Soil - Main" contains the principal analysis procedure. It is supported by the functions implemented in "Lanzarote Soil - Functions", which the main document access at the start using the "source" command (local path to the file must be manually introduced).
 
