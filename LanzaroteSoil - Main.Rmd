@@ -8,8 +8,8 @@ output: html_document
 ```{r}
 #Path to access the local folder where the script with the functions associated with this work is
 
-folderScripts <- "/Users/cacharra2.0/Desktop/TFM/R/LanzaroteSoil/"
-source(file=file.path(folderScripts, "Lanzarote Soil - Functions.Rmd"))
+#folderScripts <- "/Users/cacharra2.0/Desktop/TFM/R/LanzaroteSoil/"
+#source(file=file.path(folderScripts, "Lanzarote Soil - Functions.Rmd"))
 
 ```
 
@@ -63,9 +63,11 @@ SoilData$SUBCLASS2_FARMED <- factor(SoilData$SUBCLASS2_FARMED)
 SoilData$SUBCLASS3_MULCHING <- factor(SoilData$SUBCLASS3_MULCHING)
 SoilData$SUBCLASS4_IRRIGATION <- factor(SoilData$SUBCLASS4_IRRIGATION)
 SoilData$CLASS.REFERENCE <- factor(SoilData$CLASS.REFERENCE)
-SoilData$DEPTH <- factor(SoilData$DEPTH) #LABELS!
-SoilData$TEXTURE <- factor(SoilData$TEXTURE) #LABELS!
+SoilData$DEPTH <- factor(SoilData$DEPTH, levels=c(1,2,3,4), labels=c("0-30 cm", "30-60 cm", "60-90 cm", ">90 cm"))
+SoilData$TEXTURE <- factor(SoilData$TEXTURE, levels= c(1,2,3,4), labels=c("Arenosa", "Limosa", "Arcillosa", "Franca"))
 ```
+
+
 
 ## 3. Wrangling of the data
 
@@ -74,11 +76,11 @@ Creating a new factor with the different pH types, and categories for rainfall, 
 ```{r}
 SoilData$PHgrouped <- cut(SoilData$PH, breaks=c(-Inf, 6, 8, Inf), labels=c("Acid", "Neutral", "Basic"))
 
-SoilData$rainfallgrouped <- factor(cut(SoilData$RAINFALL_A, breaks=c(-Inf,low_cut_break(SoilData,"RAINFALL_A",3), high_cut_break(SoilData,"RAINFALL_A",3), Inf), labels=c("local low rainfall", "local medium rainfall", "local high rainfall")))
+SoilData$rainfallgrouped <- factor(cut(SoilData$RAINFALL_A, breaks=c(-Inf,low_cut_break(SoilData,"RAINFALL_A"), high_cut_break(SoilData,"RAINFALL_A"), Inf), labels=c("local low rainfall", "local medium rainfall", "local high rainfall")))
 
 SoilData$slopegrouped <- factor(cut(SoilData$SLOPE, breaks=c(-Inf,5,15, Inf), labels=c("low slope", "medium slope", "high slope")))
 
-SoilData$elevatgrouped <- factor(cut(SoilData$ELEVAT, breaks=c(-Inf,low_cut_break(SoilData,"ELEVAT",3), high_cut_break(SoilData,"ELEVAT",3), Inf), labels=c("low elevation", "normal elevation", "high elevation")))
+SoilData$elevatgrouped <- factor(cut(SoilData$ELEVAT, breaks=c(-Inf,low_cut_break(SoilData,"ELEVAT"), high_cut_break(SoilData,"ELEVAT"), Inf), labels=c("low elevation", "normal elevation", "high elevation")))
 ```
 
 
@@ -93,3 +95,53 @@ for (i in seq_along(variable_names)){
   variable_exploration(SoilData, variable_names[i])
 }
 ```
+
+### Principal component analysis
+
+```{r}
+##REMOVE ALL THIS CHUNK???
+numeric_variables <- c()
+for (i in seq_along(variable_names)){
+  
+  variable_name <- variable_names[i]
+  
+  if (is.numeric(SoilData[,variable_name])){
+    numeric_variables <- c(numeric_variables, variable_name)
+  }
+}
+
+numeric_SoilData <- dplyr::select(SoilData, (numeric_variables))
+
+#Coordinates variables are also extracted
+
+numeric_SoilData$XUTM <- NULL
+numeric_SoilData$YUTM <- NULL
+```
+
+The first principal component analysis will be performed only with columns 13 to 32, as those are all numeric, descriptive of soil quality and have very few NA's in comparison with other variables.
+
+```{r}
+SoilData_pca1filter <- Remove_NA_lines(Remove_outliers(SoilData, c(13:32)), c(13:32))
+
+SoilData.pca1 <- prcomp(SoilData_pca1filter[,13:32], center=TRUE, scale.=TRUE)
+
+library(ggbiplot)
+ggbiplot(SoilData.pca1, ellipse=TRUE, groups = SoilData_pca1filter$SUBCLASS1_AGRICULTURALSYSTEM)
+```
+
+```{r}
+ggbiplot(SoilData.pca1, ellipse=TRUE, groups = SoilData_pca1filter$SUBCLASS2_FARMED)
+````
+
+
+```{r}
+ggbiplot(SoilData.pca1, ellipse=TRUE, groups = SoilData_pca1filter$SUBCLASS3_MULCHING)
+````
+
+```{r}
+ggbiplot(SoilData.pca1, ellipse=TRUE, groups = SoilData_pca1filter$SUBCLASS4_IRRIGATION)
+````
+
+```{R}
+#ggbiplot(SoilData.pca1, ellipse=TRUE, groups = SoilData_pca1filter$SUBCLASS5_COASTAL)
+````

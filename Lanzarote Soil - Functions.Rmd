@@ -7,19 +7,19 @@ output: html_document
 
 ## low_cut_break and high_cut_break
 
-A function that gives the cut points to separate data in parts of the same size. It's intended to be used along with the "cut" function.
+A function that gives the cut points to separate data in three parts of the same size. It's intended to be used along with the "cut" function.
 
 ```{r}
-low_cut_break <- function(dataframe, variable_chr, cut){
+low_cut_break <- function(dataframe, variable_chr){
   
-  low_cut <- min(dataframe[,variable_chr], na.rm=TRUE) + ((max(dataframe[,variable_chr], na.rm=TRUE)-min(dataframe[,variable_chr], na.rm=TRUE))/cut)
+  low_cut <- min(dataframe[,variable_chr], na.rm=TRUE) + ((max(dataframe[,variable_chr], na.rm=TRUE)-min(dataframe[,variable_chr], na.rm=TRUE))/3)
   
   return(low_cut)
 }
 
-high_cut_break <- function(dataframe, variable_chr, cut){
+high_cut_break <- function(dataframe, variable_chr){
   
-  high_cut <- max(dataframe[,variable_chr], na.rm=TRUE) - ((max(dataframe[,variable_chr], na.rm=TRUE)-min(dataframe[,variable_chr], na.rm=TRUE))/cut)
+  high_cut <- max(dataframe[,variable_chr], na.rm=TRUE) - ((max(dataframe[,variable_chr], na.rm=TRUE)-min(dataframe[,variable_chr], na.rm=TRUE))/3)
   
   return(high_cut)
 }
@@ -69,18 +69,28 @@ map_plot <- function(subclass_chr, subclass_label, dataframe, variable_chr){
 
 ```{r}
 
-soil_boxplot <- function(subclass_chr, subclass_label, dataframe, variable_chr){
+soil_test_boxplot <- function(subclass_chr, subclass_label, dataframe, variable_chr, comparisons){
   
   require(ggplot2)
   require(dplyr)
   
   filtered_data <- dplyr::filter(dataframe, !is.na(dataframe[,variable_chr]))
   
-  ggplot(filtered_data, aes(x=filtered_data[,subclass_chr], y=filtered_data[,variable_chr]))+
+  if (shapiro.test(dataframe[,variable_chr])[[2]]>0.05){
+    
+    ggplot(filtered_data, aes(x=filtered_data[,subclass_chr], y=filtered_data[,variable_chr]))+
     geom_boxplot()+
-    ggtitle(paste("Boxplot of", variable_chr, "related to", subclass_label))+
+    ggtitle(paste(variable_chr, "to", subclass_label, "(test method = t-test)" ))+
+    labs(x=subclass_label, y=variable_chr)+
+    stat_compare_means(comparisons=comparisons, method="t.test")
+
+  }else{
+    ggplot(filtered_data, aes(x=filtered_data[,subclass_chr], y=filtered_data[,variable_chr]))+
+    geom_boxplot()+
+    ggtitle(paste(variable_chr, "to", subclass_label))+
     labs(x=subclass_label, y=variable_chr)
-        
+  }
+  
   
 }
 
@@ -101,6 +111,7 @@ variable_exploration <- function (dataframe, variable_chr) {
         require(ggplot2)
         require(dplyr)
         require(gridExtra)
+        require(ggpubr)
         
         # the name of the resulting pdf file.
          filename <- paste("Exploration of ", variable_chr,".pdf", sep="") 
@@ -117,7 +128,7 @@ variable_exploration <- function (dataframe, variable_chr) {
          plot.new()
          
          grid.table(capture.output(shapiro.test(dataframe[,variable_chr])))
-         
+         # MAP-PLOTS
          #map_plot("CLASS", "Soil Class", dataframe, variable_chr)??
          
          print(map_plot("SUBCLASS1_AGRICULTURALSYSTEM", "Agricultural System", dataframe, variable_chr))
@@ -128,13 +139,33 @@ variable_exploration <- function (dataframe, variable_chr) {
          
          print(map_plot("SUBCLASS4_IRRIGATION", "Soil Irrigation",dataframe, variable_chr))
          
-         print(soil_boxplot("SUBCLASS1_AGRICULTURALSYSTEM", "Agricultural System", dataframe, variable_chr))
+         #BOXPLOTS
          
-         print(soil_boxplot("SUBCLASS2_FARMED", "Soil Farming", dataframe, variable_chr))
+           
+           mycomparisons <- list(c("Non-Farmed", "Terraced"),c("Non-Farmed", "Tephra mulched"), c("Non-Farmed", "Sand mulched"), c("Non-Farmed", "Runoff capture"), c("Terraced", "Tephra mulched"), c("Terraced", "Sand mulched"), c("Terraced", "Runoff capture"), c("Tephra mulched", "Sand mulched"), c("Tephra mulched", "Runoff capture"), c("Sand mulched", "Runoff capture"))
+           
+           print(soil_test_boxplot("SUBCLASS1_AGRICULTURALSYSTEM", "Agricultural System", dataframe, variable_chr, mycomparisons))
          
-         print(soil_boxplot("SUBCLASS3_MULCHING", "Soil Mulching",dataframe, variable_chr))
+           mycomparisons <- list(c("Natural", "Farmed"))
+           
+         print(soil_test_boxplot("SUBCLASS2_FARMED", "Soil Farming", dataframe, variable_chr, mycomparisons))
          
-         print(soil_boxplot("SUBCLASS4_IRRIGATION", "Soil Irrigation",dataframe, variable_chr))
+          mycomparisons <- list(c("No mulch", "Tephra"), c("No mulch", "Sand"), c("Tephra", "Sand"))
+         
+         print(soil_test_boxplot("SUBCLASS3_MULCHING", "Soil Mulching",dataframe, variable_chr, mycomparisons))
+         
+         mycomparisons <- list(c("No Irrigation", "Unknown"), c("No Irrigation", "Rainfed"), c("No Irrigation", "Irrigated"), c("No Irrigation", "Runoff"), c("Unknown", "Rainfed"), c("Unknown", "Irrigated"), c("Unknown", "Runoff"), c("Rainfed", "Irrigated"), c("Rainfed", "Runoff"), c("Irrigated", "Runoff"))
+         
+         print(soil_test_boxplot("SUBCLASS4_IRRIGATION", "Soil Irrigation",dataframe, variable_chr, mycomparisons))
+           
+         
+         #print(soil_boxplot("SUBCLASS1_AGRICULTURALSYSTEM", "Agricultural System", dataframe, variable_chr))
+         
+         #print(soil_boxplot("SUBCLASS2_FARMED", "Soil Farming", dataframe, variable_chr))
+         
+         #print(soil_boxplot("SUBCLASS3_MULCHING", "Soil Mulching",dataframe, variable_chr))
+         
+         #print(soil_boxplot("SUBCLASS4_IRRIGATION", "Soil Irrigation",dataframe, variable_chr))
          
          dev.off()
          return()
@@ -198,5 +229,49 @@ make_subclass_coastal <- function(){
 
   
 ```
+
+## Remove NA lines
+
+This function removes all the lines of a dataframe that contain any NA values for the columns passed as argument.
+
+```{r}
+Remove_NA_lines <- function(dataframe, columns_num){
+  eliminated_rows <- c()
+  for (i in columns){
+    for (a in seq_along(dataframe[,i])){
+      if (is.na(dataframe[,i][a])){
+        if (a %in% eliminated_rows) next
+        else eliminated_rows <- c(eliminated_rows, a)
+        }
+      }
+  }
+  new_dataframe <- dataframe[-eliminated_rows,]
+  return(new_dataframe)
+  }
+
+```
+
+## Remove outliers
+
+This function takes as an outlier every observation whose standard deviation is greater than 6, then removes that observation from the dataframe.
+
+```{r}
+Remove_outliers <- function(dataframe, columns_num){
+  
+      for (i in columns_num){
+        Q1 <- quantile(dataframe[,i], probs=0.25, na.rm=TRUE)
+        Q3 <- quantile(dataframe[,i], probs=0.75, na.rm=TRUE)
+        low_value <- Q1 - IQR(dataframe[,i], na.rm=TRUE)*1.5
+        high_value <- Q3 + IQR(dataframe[,i], na.rm=TRUE)*1.5
+        
+        for (a in seq_along(dataframe[,i])){
+          if (is.na(dataframe[,i][a])) next
+          else if (dataframe[,i][a] < low_value) dataframe[,i][a]<- NA
+          else if (dataframe[,i][a] > high_value) dataframe[,i][a]<- NA
+        }
+      }
+      return(dataframe)
+  }
+````
 
 
