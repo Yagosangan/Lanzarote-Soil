@@ -139,6 +139,8 @@ variable_exploration <- function (dataframe, variable_chr) {
          
          print(map_plot("SUBCLASS4_IRRIGATION", "Soil Irrigation",dataframe, variable_chr))
          
+         print(map_plot("SUBCLASS5_POSITION", "Soil Position",dataframe, variable_chr))
+         
          #BOXPLOTS
          
            
@@ -146,18 +148,22 @@ variable_exploration <- function (dataframe, variable_chr) {
            
            print(soil_test_boxplot("SUBCLASS1_AGRICULTURALSYSTEM", "Agricultural System", dataframe, variable_chr, mycomparisons))
          
-           mycomparisons <- list(c("Natural", "Farmed"))
+           mycomparisons <- list(c("Non-farmed", "Farmed"))
            
          print(soil_test_boxplot("SUBCLASS2_FARMED", "Soil Farming", dataframe, variable_chr, mycomparisons))
          
-          mycomparisons <- list(c("No mulch", "Tephra"), c("No mulch", "Sand"), c("Tephra", "Sand"))
+          mycomparisons <- list(c("No mulch non-farmed", "Tephra"), c("No mulch non-farmed", "Sand"), c("No mulch non-farmed", "No mulch farmed"), c("Tephra", "Sand"), c("Tephra", "No mulch farmed"), c("Sand", "No mulch farmed"))
          
          print(soil_test_boxplot("SUBCLASS3_MULCHING", "Soil Mulching",dataframe, variable_chr, mycomparisons))
          
-         mycomparisons <- list(c("No Irrigation", "Unknown"), c("No Irrigation", "Rainfed"), c("No Irrigation", "Irrigated"), c("No Irrigation", "Runoff"), c("Unknown", "Rainfed"), c("Unknown", "Irrigated"), c("Unknown", "Runoff"), c("Rainfed", "Irrigated"), c("Rainfed", "Runoff"), c("Irrigated", "Runoff"))
+         mycomparisons <- list(c("No Irrigation non-farmed", "Rainfed"), c("No Irrigation non-farmed", "Irrigated"), c("No Irrigation non-farmed", "Runoff"), c("Rainfed", "Irrigated"), c("Rainfed", "Runoff"), c("Irrigated", "Runoff"))
          
          print(soil_test_boxplot("SUBCLASS4_IRRIGATION", "Soil Irrigation",dataframe, variable_chr, mycomparisons))
            
+         mycomparisons <- list(c("Inland farmed", "Mountain non-farmed"), c("Inland farmed", "Coastal non-farmed"), c("Mountain non-farmed", "Coastal non-farmed"))
+         
+         print(soil_test_boxplot("SUBCLASS5_POSITION", "Soil Position",dataframe, variable_chr, mycomparisons))
+         
          
          #print(soil_boxplot("SUBCLASS1_AGRICULTURALSYSTEM", "Agricultural System", dataframe, variable_chr))
          
@@ -188,6 +194,8 @@ variable_exploration <- function (dataframe, variable_chr) {
         print(map_plot("SUBCLASS3_MULCHING", "Soil mulching",dataframe, variable_chr))
          
         print(map_plot("SUBCLASS4_IRRIGATION", "Soil Irrigation",dataframe, variable_chr))
+        
+        print(map_plot("SUBCLASS5_POSITION", "Soil Position",dataframe, variable_chr))
         
         dev.off()
         return()
@@ -237,7 +245,7 @@ This function removes all the lines of a dataframe that contain any NA values fo
 ```{r}
 Remove_NA_lines <- function(dataframe, columns_num){
   eliminated_rows <- c()
-  for (i in columns){
+  for (i in columns_num){
     for (a in seq_along(dataframe[,i])){
       if (is.na(dataframe[,i][a])){
         if (a %in% eliminated_rows) next
@@ -253,10 +261,10 @@ Remove_NA_lines <- function(dataframe, columns_num){
 
 ## Remove outliers
 
-This function takes as an outlier every observation whose standard deviation is greater than 6, then removes that observation from the dataframe.
+This function defines as an outlier every observation that is over or under the first and third quartiles, respectively, exceeding them by 1.5 times the interquartile range. Then, it sets that value as NA
 
 ```{r}
-Remove_outliers <- function(dataframe, columns_num){
+Remove_outliers_IQR <- function(dataframe, columns_num){
   
       for (i in columns_num){
         Q1 <- quantile(dataframe[,i], probs=0.25, na.rm=TRUE)
@@ -272,6 +280,60 @@ Remove_outliers <- function(dataframe, columns_num){
       }
       return(dataframe)
   }
-````
+```
+
+This function is thought to be used with visual subjective exploration of the data. First, the observer decides how many outliers there are and uses this function to remove them. It takes the most extreme values (the number of values taken depends on the subjective exploration) and sets them as NAs.
+
+```{r}
+Remove_outliers_visually <- function(dataframe, column_chr, uppervalues, lowervalues){
+  
+  if (uppervalues > 0){
+    
+    for (i in 1:uppervalues){
+    
+    position <- which(dataframe[,column_chr] == max(na.omit(dataframe[,column_chr])))
+    
+    dataframe[,column_chr][position] <- NA
+    }
+  }
+  if (lowervalues > 0){
+    
+     for (i in 1:lowervalues){
+    
+    position <- which(dataframe[,column_chr] == min(na.omit(dataframe[,column_chr])))
+    
+    dataframe[,column_chr][position] <- NA
+    
+     }
+    }
+  return(dataframe)
+}
+
+```
+
+
+##Normalize data
+
+A function to normalize the data via linear scaling 
+
+```{r}
+
+normalize <- function(dataframe, columns_num){
+  
+  new_dataframe <- dataframe
+  
+  for (i in columns_num){
+    if (is.numeric(dataframe[,i])){
+      newvariable <- (dataframe[,i]-min(dataframe[,i]))/(max(dataframe[,i])-min(dataframe[,i]))
+      
+      new_dataframe[,i] <- newvariable
+    }
+    
+  }
+  return(new_dataframe)
+}
+```
+
+
 
 

@@ -5,12 +5,13 @@ date:
 output: html_document
 ---
 
-```{r}
+```{r, include=FALSE}
 #Path to access the local folder where the script with the functions associated with this work is
 
 #folderScripts <- "/Users/cacharra2.0/Desktop/TFM/R/LanzaroteSoil/"
-#source(file=file.path(folderScripts, "Lanzarote Soil - Functions.Rmd"))
-
+#source(file=file.path(folderScripts, "LanzaroteSoil.Rproj"))
+library(rmarkdown)
+render("Lanzarote Soil - Functions.Rmd")
 ```
 
 
@@ -25,7 +26,7 @@ library(openxlsx)
 #Creating the local path to the data, and using that path to generate an object containing such data
 
 DataPath <- "/Users/cacharra2.0/Desktop/TFM/Lanzarotesoil.xlsx"
-SoilData <- read.xlsx(DataPath, colNames = TRUE)
+ SoilData <- read.xlsx(DataPath, colNames = TRUE)
 ```
 
 ## 2. Superficial exploration of the data
@@ -84,19 +85,47 @@ SoilData$elevatgrouped <- factor(cut(SoilData$ELEVAT, breaks=c(-Inf,low_cut_brea
 ```
 
 
-
 ## 4. Variable exploration
 
 The function "variable_exploration" is applied to all variables, which generated a pdf file with all the information required.
 
-```{r}
+```{r, echo=T, results="hide"}
 variable_names <- colnames(SoilData)
 for (i in seq_along(variable_names)){
   variable_exploration(SoilData, variable_names[i])
 }
 ```
 
-### Principal component analysis
+In the different pdf files that variable_exploration generated, some outliers can be seen in the boxplots. These are removed below manually via the remove_outliers_visually function, so they don't interfere in the next steps of the analysis.
+
+```{r}
+SoilData <- Remove_outliers_visually(SoilData, "Caexch", 3, 0)
+SoilData <-Remove_outliers_visually(SoilData, "CEC", 3, 0)
+SoilData <-Remove_outliers_visually(SoilData, "Corg", 2, 0)
+SoilData <-Remove_outliers_visually(SoilData, "CU", 2, 0)
+SoilData <-Remove_outliers_visually(SoilData, "EC", 4, 0)
+SoilData <-Remove_outliers_visually(SoilData, "FE", 1, 0)
+SoilData <-Remove_outliers_visually(SoilData, "HWSB", 3, 0)
+SoilData <-Remove_outliers_visually(SoilData, "Kexch", 1, 0)
+SoilData <-Remove_outliers_visually(SoilData, "Mgexch", 1, 0)
+SoilData <-Remove_outliers_visually(SoilData, "MN", 6, 0)
+SoilData <-Remove_outliers_visually(SoilData, "Naexch", 4, 0)
+SoilData <-Remove_outliers_visually(SoilData, "PH", 0, 3)
+SoilData <-Remove_outliers_visually(SoilData, "PHwater", 0, 5)
+SoilData <-Remove_outliers_visually(SoilData, "Polsen", 4, 0)
+SoilData <-Remove_outliers_visually(SoilData, "SAR", 3, 0)
+SoilData <-Remove_outliers_visually(SoilData, "Silt.g.kg-1", 1, 0)
+SoilData <-Remove_outliers_visually(SoilData, "TN", 4, 0)
+SoilData <-Remove_outliers_visually(SoilData, "ZN", 6, 0)
+```
+
+
+### CONCLUSIONS FROM VARIABLE EXPLORATION
+
+
+
+
+## 5. Principal component analysis
 
 ```{r}
 ##REMOVE ALL THIS CHUNK???
@@ -121,27 +150,70 @@ numeric_SoilData$YUTM <- NULL
 The first principal component analysis will be performed only with columns 13 to 32, as those are all numeric, descriptive of soil quality and have very few NA's in comparison with other variables.
 
 ```{r}
-SoilData_pca1filter <- Remove_NA_lines(Remove_outliers(SoilData, c(13:32)), c(13:32))
+SoilData_pca1filter <- Remove_NA_lines(SoilData, c(14:33))
 
-SoilData.pca1 <- prcomp(SoilData_pca1filter[,13:32], center=TRUE, scale.=TRUE)
-
+SoilData.pca1 <- prcomp(SoilData_pca1filter[,14:33], center=TRUE, scale.=TRUE)
 library(ggbiplot)
+```
+
+
+```{r}
 ggbiplot(SoilData.pca1, ellipse=TRUE, groups = SoilData_pca1filter$SUBCLASS1_AGRICULTURALSYSTEM)
 ```
 
 ```{r}
 ggbiplot(SoilData.pca1, ellipse=TRUE, groups = SoilData_pca1filter$SUBCLASS2_FARMED)
-````
+```
 
 
 ```{r}
 ggbiplot(SoilData.pca1, ellipse=TRUE, groups = SoilData_pca1filter$SUBCLASS3_MULCHING)
-````
+```
 
 ```{r}
 ggbiplot(SoilData.pca1, ellipse=TRUE, groups = SoilData_pca1filter$SUBCLASS4_IRRIGATION)
-````
+```
 
-```{R}
-#ggbiplot(SoilData.pca1, ellipse=TRUE, groups = SoilData_pca1filter$SUBCLASS5_COASTAL)
-````
+For the PCA grouping by position of the sample (inland, mountain or coastal), the variables PHwater and HWSB (Hot Water Soluble Boro) will not be taken into account as there are too many NAs for the coastal category.
+
+```{r}
+SoilData_pca1filter2 <- Remove_NA_lines(SoilData, c(14,15,17:31,33))
+
+SoilData.pca1position <- prcomp(SoilData_pca1filter2[,c(14,15,17:31,33)], center=TRUE, scale.=TRUE)
+
+ggbiplot(SoilData.pca1position, ellipse=TRUE, groups = SoilData_pca1filter2$SUBCLASS5_POSITION)
+```
+
+Below, the PCA is repeated, taking into account all the variables
+
+```{r}
+SoilData_pca1filterall <- Remove_NA_lines(SoilData, c(14:33,37:39))
+
+SoilData.pca2 <- prcomp(SoilData_pca1filterall[,c(14:33,37:39)], center=TRUE, scale.=TRUE)
+library(ggbiplot)
+
+```
+
+```{r}
+ggbiplot(SoilData.pca2, ellipse=TRUE, groups = SoilData_pca1filterall$SUBCLASS1_AGRICULTURALSYSTEM)
+```
+
+```{r}
+ggbiplot(SoilData.pca2, ellipse=TRUE, groups = SoilData_pca1filterall$SUBCLASS2_FARMED)
+```
+
+
+```{r}
+ggbiplot(SoilData.pca2, ellipse=TRUE, groups = SoilData_pca1filterall$SUBCLASS3_MULCHING)
+```
+
+```{r}
+ggbiplot(SoilData.pca2, ellipse=TRUE, groups = SoilData_pca1filterall$SUBCLASS4_IRRIGATION)
+```
+```{r}
+SoilData_pca1filterall2 <- Remove_NA_lines(SoilData, c(14,15,17:31,33,37:39))
+
+SoilData.pca1position2 <- prcomp(SoilData_pca1filterall2[,c(14,15,17:31,33,37:39)], center=TRUE, scale.=TRUE)
+
+ggbiplot(SoilData.pca1position2, ellipse=TRUE, groups = SoilData_pca1filterall2$SUBCLASS5_POSITION)
+```
